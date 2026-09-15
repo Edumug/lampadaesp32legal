@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Acender Lâmpada</title>
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Acender Lâmpada</h1>
+    </header>
+
+    <main>
+
+        <div id="botoes">
+
+            <button onclick="ligar()" id="botao1">
+                Ligar
+            </button>
+
+            <button onclick="desligar()" id="botao2">
+                Desligar
+            </button>
+
+        </div>
+
+        <p id="status">
+            Status: desconhecido
+        </p>
+
+    </main>
+
+    <footer>
+    </footer>
+
+
+    <script type="module">
+
+        // Firebase
+        import { initializeApp }
+            from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+
+        import {
+            getDatabase,
+            ref,
+            set,
+            onValue
+        } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+
+            apiKey: "AIzaSyBQGfrAvhELLXdOrmmLLeWH-p7RI8VNou4",
+
+            authDomain: "lampadaesp32.firebaseapp.com",
+
+            databaseURL:
+                "https://lampadaesp32-default-rtdb.firebaseio.com",
+
+            projectId: "lampadaesp32",
+
+            storageBucket:
+                "lampadaesp32.firebasestorage.app",
+
+            messagingSenderId:
+                "240772142944",
+
+            appId:
+                "1:240772142944:web:29aae49d552d0068dd3005"
+        };
+
+
+        // Inicializa Firebase
+        const app = initializeApp(firebaseConfig);
+
+        const db = getDatabase(app);
+
+
+        // MESMO caminho que o ESP32 está lendo
+        const lampadaRef = ref(db, "lampada");
+
+
+        // BOTÃO LIGAR
+        window.ligar = function () {
+
+            set(lampadaRef, true)
+
+                .then(() => {
+
+                    console.log("Comando enviado: Ligar");
+
+                    document.getElementById("status").textContent =
+                        "Status: LIGADA";
+
+                })
+
+                .catch((erro) => {
+
+                    console.error("Erro ao ligar:", erro);
+
+                });
+        };
+
+
+        // BOTÃO DESLIGAR
+        window.desligar = function () {
+
+            set(lampadaRef, false)
+
+                .then(() => {
+
+                    console.log("Comando enviado: Desligar");
+
+                    document.getElementById("status").textContent =
+                        "Status: DESLIGADA";
+
+                })
+
+                .catch((erro) => {
+
+                    console.error("Erro ao desligar:", erro);
+
+                });
+        };
+
+
+        // Atualiza o status automaticamente
+        onValue(lampadaRef, (snapshot) => {
+
+            const estado = snapshot.val();
+
+            console.log("Estado atual:", estado);
+
+            if (estado === true) {
+
+                document.getElementById("status").textContent =
+                    "Status: LIGADA";
+
+            } else {
+
+                document.getElementById("status").textContent =
+                    "Status: DESLIGADA";
+
+            }
+
+        });
+
+    </script>
+
+</body>
+
+</html>
