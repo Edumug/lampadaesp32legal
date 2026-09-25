@@ -9,12 +9,14 @@
 
 #define RELE 2
 
+bool estadoAnterior = false;
+
 void setup() {
     Serial.begin(115200);
 
     pinMode(RELE, OUTPUT);
 
-    // Relé desligado    
+    // Relé desligado inicialmente
     digitalWrite(RELE, HIGH);
 
     Serial.println();
@@ -25,6 +27,7 @@ void setup() {
     Serial.print("Conectando ao WiFi");
 
     while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
         Serial.print(".");
     }
 
@@ -35,9 +38,9 @@ void setup() {
 }
 
 void loop() {
-
     if (WiFi.status() != WL_CONNECTED) {
         Serial.println("WiFi desconectado!");
+        delay(1000);
         return;
     }
 
@@ -45,53 +48,48 @@ void loop() {
 
     String url = String(DATABASE_URL) + "/lampada.json";
 
-    Serial.print("Consultando: ");
-    Serial.println(url);
-
     http.begin(url);
 
     int codigo = http.GET();
 
     if (codigo > 0) {
-
-        Serial.print("HTTP: ");
-        Serial.println(codigo);
-
         String resposta = http.getString();
-
         resposta.trim();
 
         Serial.print("Firebase: ");
         Serial.println(resposta);
 
-        if (resposta == "false") {
-
+        // Firebase true = lâmpada ligada
+        // Firebase false = lâmpada desligada
+        if (resposta == "true") {
             digitalWrite(RELE, LOW);
 
-            Serial.println("💡 LAMPADA LIGADA");
+            if (!estadoAnterior) {
+                Serial.println("COMANDO RECEBIDO: LIGAR");
+            }
 
-        } 
-        else if (resposta == "true") {
-
+            estadoAnterior = true;
+        }
+        else if (resposta == "false") {
             digitalWrite(RELE, HIGH);
 
-            Serial.println("⚫ LAMPADA DESLIGADA");
+            if (estadoAnterior) {
+                Serial.println("COMANDO RECEBIDO: DESLIGAR");
+            }
 
+            estadoAnterior = false;
         }
         else if (resposta == "null") {
-
-            Serial.println("Firebase ainda nao possui /lampada/ligada");
-
+            Serial.println("Aguardando comando no Firebase...");
         }
-
-    } 
+    }
     else {
-
         Serial.print("Erro HTTP: ");
         Serial.println(codigo);
-
     }
 
     http.end();
 
+    // Evita consultas excessivamente rápidas
+    delay(1000);
 }
